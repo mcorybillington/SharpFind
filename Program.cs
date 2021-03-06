@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Threading;
+using System.Runtime.InteropServices;
 
 namespace SharpFind
 {
@@ -11,43 +11,38 @@ namespace SharpFind
     {
         static int Main(string[] args)
         {
-            Dictionary<string, string> arguments = args.ToDictionary(
-                 k => k.Split(new char[] { ':' }, 2)[0].ToLower(),
-                 v => v.Split(new char[] { ':' }, 2).Count() > 1
-                                                    ? v.Split(new char[] { ':' }, 2)[1]
-                                                    : null); ;
+            if (args.Length == 0)
+            {
+                Usage();
+                return 0;
+            }
+
+            Dictionary<string, string> arguments = SetArgs(args);
+            if (arguments.Count == 0)
+            {
+                Console.WriteLine(@"Arguments must be in colon separated form such as  '/e:searchpattern.*'");
+                return 1;
+            }
+
+            if (arguments.ContainsKey("/h"))
+            {
+                Usage();
+                return 0;
+            }
 
 
             var searchPattern = arguments.ContainsKey("/e") ? arguments["/e"] : "*.*";
             var searchPath = arguments.ContainsKey("/p") ? Path.GetFullPath(arguments["/p"]) : Directory.GetCurrentDirectory();
             bool checkWritable = arguments.ContainsKey("/w");
+            int writeTime = ParseIntFromArgs(arguments, "/m");
+            int priority = ParseIntFromArgs(arguments, "/c");
+            writeTime = (writeTime > 0) ? writeTime * -1 : writeTime;
 
-            if (arguments.ContainsKey("/c"))
+            if (!SetPriority(priority))
             {
-                Process thisProcess = Process.GetCurrentProcess();
-                switch (arguments["/c"].ToLower())
-                {
-                    case "r":
-                        thisProcess.PriorityClass = ProcessPriorityClass.RealTime;
-                        break;
-                    case "h":
-                        thisProcess.PriorityClass = ProcessPriorityClass.High;
-                        break;
-                    case "a":
-                        thisProcess.PriorityClass = ProcessPriorityClass.AboveNormal;
-                        break;
-                    case "n":
-                        thisProcess.PriorityClass = ProcessPriorityClass.Normal;
-                        break;
-                    case "b":
-                        thisProcess.PriorityClass = ProcessPriorityClass.BelowNormal;
-                        break;
-                    case "i":
-                        thisProcess.PriorityClass = ProcessPriorityClass.Idle;
-                        break;
-                }
+                Console.WriteLine($"[-] Argument '/c' value: {priority} is invalid. Integers 0-5 are valid values.");
+                return 1;
             }
-
 
             if ((!Directory.Exists(searchPath)) && !(File.Exists(searchPath)))
             {
@@ -55,42 +50,15 @@ namespace SharpFind
                 return 1;
             }
 
-            int writeTime = parseIntFromArgs(arguments, "/m");
-            Console.WriteLine(writeTime);
-
-            
-
-
-            Console.WriteLine($"[+] Search Path: {searchPath}");
-            Console.WriteLine($"[+] Search Pattern: {searchPattern}{Environment.NewLine}");
-
-
-            if (arguments.ContainsKey("/m"))
-            {
-                try
-                {
-                    return Convert.ToInt32(arguments["/m"]) * -1;
-                }
-                catch
-                {
-                    Console.WriteLine($"[-] Last Modified Time '/m' value: '{arguments["/m"]}' is invalid");
-                    return 1;
-                }
-            }
-
-            doFileChecks(searchPath, searchPattern, checkWritable, writeTime);
+            DoFileChecks(searchPath, searchPattern, checkWritable, writeTime);
 
             return 0;
         }
 
         // This just opens the file to write and immediately closes it.
         // It will throw an exception if it cannot. Outputs if the file is locked, otherwise it just returns.
-        private static string isWritable(string path)
+        private static string IsWritable(string path)
         {
-            if (!File.Exists(path))
-            {
-                return null;
-            }
             try
             {
                 File.OpenWrite(path).Close();
@@ -98,7 +66,8 @@ namespace SharpFind
             }
             catch (Exception ex)
             {
-                if (ex is IOException)
+                var errorCode = Marshal.GetHRForException(ex) & ((1 << 16) - 1);
+                if (errorCode == 32 || errorCode == 33)
                 {
                     return $"[LOCKED] {path} [LOCKED]";
                 }
@@ -109,8 +78,54 @@ namespace SharpFind
             }
         }
 
+        private static Dictionary<string, string> SetArgs(string[] args)
+        {
+            try
+            {
+                return args.ToDictionary(
+                 k => k.Split(new char[] { ':' }, 2)[0].ToLower(),
+                 v => v.Split(new char[] { ':' }, 2).Count() > 1
+                                                    ? v.Split(new char[] { ':' }, 2)[1]
+                                                    : null); ;
+            }
+            catch
+            {
+                return new Dictionary<string, string>();
+            }
+
+        }
+
+        // Sets process priority to control OS allication of resources compared to other processes.
+        private static bool SetPriority(int priority)
+        {
+            Process thisProcess = Process.GetCurrentProcess();
+            switch (priority)
+            {
+                case 5:
+                    thisProcess.PriorityClass = ProcessPriorityClass.RealTime;
+                    return true;
+                case 4:
+                    thisProcess.PriorityClass = ProcessPriorityClass.High;
+                    return true;
+                case 3:
+                    thisProcess.PriorityClass = ProcessPriorityClass.AboveNormal;
+                    return true;
+                case 2:
+                    thisProcess.PriorityClass = ProcessPriorityClass.Normal;
+                    return true;
+                case 1:
+                    thisProcess.PriorityClass = ProcessPriorityClass.BelowNormal;
+                    return true;
+                case 0:
+                    thisProcess.PriorityClass = ProcessPriorityClass.Idle;
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
         // Compares the last file write time to the time this script is run plus the parameter passed.
-        private static string hasBeenModified(string path, DateTime? mtime)
+        private static string HasBeenModified(string path, DateTime? mtime)
         {
             if (File.GetLastWriteTime(path) > mtime)
             {
@@ -119,25 +134,25 @@ namespace SharpFind
             return null;
         }
 
-        private static int parseIntFromArgs(Dictionary<string, string> arguments, string key)
+        private static int ParseIntFromArgs(Dictionary<string, string> arguments, string key)
         {
             if (arguments.ContainsKey(key))
             {
                 try
                 {
-                    return Convert.ToInt32(arguments["/m"]) * -1;
+                    return Convert.ToInt32(arguments[key]);
                 }
                 catch
                 {
                     Console.WriteLine($"[-] Value for '{key}' must be an integer.");
-                    return 1;
+                    return -1;
                 }
             }
             return 0;
         }
 
         // Credit to Marc Gravell for this from StackOverflow. https://stackoverflow.com/a/4986333
-        public static void doFileChecks(string root, string pattern, bool checkWrite, int modtime)
+        public static void DoFileChecks(string root, string pattern, bool checkWrite, int modtime)
         {
 
             DateTime modifiedTime = DateTime.Now.AddMinutes(modtime);
@@ -159,11 +174,11 @@ namespace SharpFind
                         string outFile = file;
                         if (modtime != 0)
                         {
-                            outFile = hasBeenModified(file, modifiedTime);
+                            outFile = HasBeenModified(file, modifiedTime);
                         }
                         if (checkWrite)
                         {
-                            outFile = isWritable(outFile);
+                            outFile = IsWritable(outFile);
                         }
                         if (outFile != null)
                         {
@@ -182,6 +197,21 @@ namespace SharpFind
                 }
                 catch { }
             }
+        }
+
+        public static void Usage()
+        {
+            Console.WriteLine(@"SharpFind.exe A .NET tool to mimic some functionality of the Unix find command");
+            Console.WriteLine(@"such finding writable files, recently modified files, and files matching a pattern");
+            Console.WriteLine(@"");
+            Console.WriteLine(@"Usage: .\SharpFind.exe /p:<absolute-or-relative-path> /e:<search-pattern> /c:<cpu-priority> /m:<minutes-since-last-modification> /w");
+            Console.WriteLine(@"Example: .\SharpFind.exe /p:c:\users\they /e:*lolcats.ext* /c:0 /m:10 /w");
+            Console.WriteLine(@"");
+            Console.WriteLine(@"/p:<path> path to search. Relative or absolute is acceptable");
+            Console.WriteLine(@"/e:<search-pattern> * is wildcard");
+            Console.WriteLine(@"/c:<cpu-priority> OS CPU priority compared to other proccesses. Valid values are 0-5, 5 being highest priority");
+            Console.WriteLine(@"/m:<minutes-since-last-modification> Find files modified in the last n minutes");
+            Console.WriteLine(@"/w Only return files wrtitable by the current user. Will show '[LOCKED]' for files that are locked for writing.");
         }
     }
 }
