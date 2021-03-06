@@ -5,7 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 
-namespace Find
+namespace SharpFind
 {
     class Program
     {

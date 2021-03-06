@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.31019.35
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Find", "Find.csproj", "{D5F65F2D-4195-4F07-BAE6-5CF41F93AC5A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharpFind", "SharpFind.csproj", "{D5F65F2D-4195-4F07-BAE6-5CF41F93AC5A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
