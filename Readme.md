@@ -20,7 +20,7 @@ SharpFind.exe /p:<absolute-or-relative-path> /e:<search-pattern> /c:<cpu-priorit
 ```
 SharpFind.exe /p:c:\users\bob /e:*lolcats.ext* /c:0 /m:10 /w
 ```
-This will look for all files in `c:\users\bob` that contain `lolcats.ext`. It will set CPU priority to `0`, thus nearly everything except for other processes set to zero will get priority over `SharpFind.exe`. It will only return files that have been modified in the last ten minutes and that are writable by the user running `SharpFind.exe`
+This will look for all files in `c:\users\bob` where the file name contains `lolcats.ext`. It will set CPU priority to `0`, thus nearly everything except for other processes set to zero will get priority over `SharpFind.exe`. It will only return files that have been modified in the last ten minutes and that are writable by the user running `SharpFind.exe`
 ## Credits
 M. Cory Billington [@_th3y](https://twitter.com/_th3y)
 
