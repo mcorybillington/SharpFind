@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reflection;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -34,6 +35,7 @@ namespace SharpFind
             var searchPattern = arguments.ContainsKey("/e") ? arguments["/e"] : "*.*";
             var searchPath = arguments.ContainsKey("/p") ? Path.GetFullPath(arguments["/p"]) : Directory.GetCurrentDirectory();
             bool checkWritable = arguments.ContainsKey("/w");
+            bool isDotNet = arguments.ContainsKey("/n");
             int writeTime = ParseIntFromArgs(arguments, "/m");
             int priority = ParseIntFromArgs(arguments, "/c");
             writeTime = (writeTime > 0) ? writeTime * -1 : writeTime;
@@ -51,7 +53,7 @@ namespace SharpFind
             }
             var watch = new Stopwatch();
             watch.Start();
-            DoFileChecks(searchPath, searchPattern, checkWritable, writeTime);
+            DoFileChecks(searchPath, searchPattern, checkWritable, writeTime, isDotNet);
             watch.Stop();
             TimeSpan ts = watch.Elapsed;
 
@@ -75,12 +77,27 @@ namespace SharpFind
                 var errorCode = Marshal.GetHRForException(ex) & ((1 << 16) - 1);
                 if (errorCode == 32 || errorCode == 33)
                 {
-                    return $"[LOCKED] {path} [LOCKED]";
+                    return $"[WRITE LOCKED] {path} [WRITE LOCKED]";
                 }
                 else
                 {
                     return null;
                 }
+            }
+        }
+        // Identifies .NET assemblies by attempting to get the assembly name. This isn't perfect as more could be done to handle
+        // read locks/etc, but it seems to do well enough.
+        // https://docs.microsoft.com/en-us/dotnet/api/system.reflection.assemblyname
+        private static string IsDotNet(string path)
+        {
+            try
+            {
+                var assembly = AssemblyName.GetAssemblyName(path);
+                return path;
+            }
+            catch
+            {
+                return null;
             }
         }
 
@@ -158,7 +175,7 @@ namespace SharpFind
         }
 
         // Credit to Marc Gravell for this from StackOverflow. https://stackoverflow.com/a/4986333
-        public static void DoFileChecks(string root, string pattern, bool checkWrite, int modtime)
+        public static void DoFileChecks(string root, string pattern, bool checkWrite, int modtime, bool isDotNet)
         {
 
             DateTime modifiedTime = DateTime.Now.AddMinutes(modtime);
@@ -185,12 +202,24 @@ namespace SharpFind
                         if (checkWrite)
                         {
                             outFile = IsWritable(outFile);
+                            if (String.IsNullOrEmpty(outFile))
+                            {
+                                continue;
+                            }
+                            if (outFile.Contains("[LOCKED]"))
+                            {
+                                Console.WriteLine(outFile);
+                                continue;
+                            }
                         }
-                        if (outFile != null)
+                        if (isDotNet)
+                        {
+                            outFile = IsDotNet(outFile);
+                        }
+                        if (!String.IsNullOrEmpty(outFile))
                         {
                             Console.WriteLine(outFile);
                         }
-
                     }
                 }
                 try
