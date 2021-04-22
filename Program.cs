@@ -65,39 +65,40 @@ namespace SharpFind
 
         // This opens the file to write and immediately closes it.
         // It will throw an exception if it cannot. Outputs if the file is locked, otherwise it just returns null.
-        private static string IsWritable(string path)
+        private static bool IsWritable(string path)
         {
             try
             {
                 File.OpenWrite(path).Close();
-                return path;
+                return true;
             }
             catch (Exception ex)
             {
                 var errorCode = Marshal.GetHRForException(ex) & ((1 << 16) - 1);
                 if (errorCode == 32 || errorCode == 33)
                 {
-                    return $"[WRITE LOCKED] {path}";
+                    Console.WriteLine($"[WRITE LOCKED] {path}");
+                    return false;
                 }
                 else
                 {
-                    return null;
+                    return false;
                 }
             }
         }
         // Identifies .NET assemblies by attempting to get the assembly name. This isn't perfect as more could be done to handle
         // read locks/etc, but it seems to do well enough.
         // https://docs.microsoft.com/en-us/dotnet/api/system.reflection.assemblyname
-        private static string IsDotNet(string path)
+        private static bool IsDotNet(string path)
         {
             try
             {
                 var assembly = AssemblyName.GetAssemblyName(path);
-                return path;
+                return true;
             }
             catch
             {
-                return null;
+                return false;
             }
         }
 
@@ -148,13 +149,13 @@ namespace SharpFind
         }
 
         // Compares the last file write time to the time this script is run plus the parameter passed.
-        private static string HasBeenModified(string path, DateTime? mtime)
+        private static bool HasBeenModified(string path, DateTime? mtime)
         {
             if (File.GetLastWriteTime(path) > mtime)
             {
-                return path;
+                return true;
             }
-            return null;
+            return false;
         }
 
         private static int ParseIntFromArgs(Dictionary<string, string> arguments, string key)
@@ -194,31 +195,22 @@ namespace SharpFind
                 {
                     foreach (var file in next)
                     {
-                        string outFile = file;
+                        bool printFile = true;
                         if (modtime != 0)
                         {
-                            outFile = HasBeenModified(file, modifiedTime);
+                            printFile = HasBeenModified(file, modifiedTime);
                         }
-                        if (checkWrite)
+                        if (checkWrite && printFile)
                         {
-                            outFile = IsWritable(outFile);
-                            if (String.IsNullOrEmpty(outFile))
-                            {
-                                continue;
-                            }
-                            if (outFile.Contains("[WRITE LOCKED]"))
-                            {
-                                Console.WriteLine(outFile);
-                                continue;
-                            }
+                            printFile = IsWritable(file);
                         }
-                        if (isDotNet)
+                        if (isDotNet && printFile)
                         {
-                            outFile = IsDotNet(outFile);
+                            printFile = IsDotNet(file);
                         }
-                        if (!String.IsNullOrEmpty(outFile))
+                        if (printFile)
                         {
-                            Console.WriteLine(outFile);
+                            Console.WriteLine(file);
                         }
                     }
                 }
