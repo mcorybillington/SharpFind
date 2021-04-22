@@ -77,7 +77,7 @@ namespace SharpFind
                 var errorCode = Marshal.GetHRForException(ex) & ((1 << 16) - 1);
                 if (errorCode == 32 || errorCode == 33)
                 {
-                    return $"[WRITE LOCKED] {path} [WRITE LOCKED]";
+                    return $"[WRITE LOCKED] {path}";
                 }
                 else
                 {
@@ -206,7 +206,7 @@ namespace SharpFind
                             {
                                 continue;
                             }
-                            if (outFile.Contains("[LOCKED]"))
+                            if (outFile.Contains("[WRITE LOCKED]"))
                             {
                                 Console.WriteLine(outFile);
                                 continue;
@@ -246,7 +246,7 @@ namespace SharpFind
             Console.WriteLine(@"/e:<search-pattern> * is wildcard");
             Console.WriteLine(@"/c:<cpu-priority> OS CPU priority compared to other proccesses. Valid values are 0-5, 5 being highest priority");
             Console.WriteLine(@"/m:<minutes-since-last-modification> Find files modified in the last n minutes");
-            Console.WriteLine(@"/w Only return files wrtitable by the current user. Will show '[LOCKED]' for files that are locked for writing.");
+            Console.WriteLine(@"/w Only return files wrtitable by the current user. Will show '[WRITE LOCKED]' for files that are locked for writing.");
         }
     }
 }
