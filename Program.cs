@@ -55,8 +55,8 @@ namespace SharpFind
             return 0;
         }
 
-        // This just opens the file to write and immediately closes it.
-        // It will throw an exception if it cannot. Outputs if the file is locked, otherwise it just returns.
+        // This opens the file to write and immediately closes it.
+        // It will throw an exception if it cannot. Outputs if the file is locked, otherwise it just returns null.
         private static string IsWritable(string path)
         {
             try
