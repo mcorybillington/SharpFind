@@ -5,6 +5,7 @@ Simple c# application to mimic some of the functionality of the linux `find` com
 - Can set CPU priority to limit resource usage (in comparison to other processes)
 - Can find files modified in the last n minutes
 - Can find writable files by the current user
+- Identify .NET assemblies
 
 ## Usage
 ```
