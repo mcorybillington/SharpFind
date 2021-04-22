@@ -49,8 +49,14 @@ namespace SharpFind
                 Console.WriteLine($"[-] Search path doesn't exist: {searchPath}");
                 return 1;
             }
-
+            var watch = new Stopwatch();
+            watch.Start();
             DoFileChecks(searchPath, searchPattern, checkWritable, writeTime);
+            watch.Stop();
+            TimeSpan ts = watch.Elapsed;
+
+            Console.WriteLine("");
+            Console.WriteLine($"[+] Completed search of {searchPath} in {ts.Seconds} {(ts.Seconds == 1 ? "second" : "seconds")}.");
 
             return 0;
         }
