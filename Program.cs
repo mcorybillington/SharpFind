@@ -247,6 +247,7 @@ namespace SharpFind
             Console.WriteLine(@"/c:<cpu-priority> OS CPU priority compared to other proccesses. Valid values are 0-5, 5 being highest priority");
             Console.WriteLine(@"/m:<minutes-since-last-modification> Find files modified in the last n minutes");
             Console.WriteLine(@"/w Only return files wrtitable by the current user. Will show '[WRITE LOCKED]' for files that are locked for writing.");
+            Console.WriteLine(@"/n Only return files that are valid.NET assemblies");
         }
     }
 }
