@@ -15,7 +15,7 @@ SharpFind.exe /p:<absolute-or-relative-path> /e:<search-pattern> /c:<cpu-priorit
 /e:<search-pattern> * is wildcard
 /c:<cpu-priority> OS CPU priority compared to other proccesses. Valid values are 0-5, 5 being highest priority
 /m:<minutes-since-last-modification> Find files modified in the last n minutes
-/w Only return files wrtitable by the current user. Will show '[LOCKED]' for files that are locked for writing.
+/w Only return files wrtitable by the current user. Will show '[WRITE LOCKED]' for files that are locked for writing.
 /n Only return files that are valid .NET assemblies
 ```
 ## Example
