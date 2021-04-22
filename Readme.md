@@ -16,12 +16,13 @@ SharpFind.exe /p:<absolute-or-relative-path> /e:<search-pattern> /c:<cpu-priorit
 /c:<cpu-priority> OS CPU priority compared to other proccesses. Valid values are 0-5, 5 being highest priority
 /m:<minutes-since-last-modification> Find files modified in the last n minutes
 /w Only return files wrtitable by the current user. Will show '[LOCKED]' for files that are locked for writing.
+/n Only return files that are valid .NET assemblies
 ```
 ## Example
 ```
-SharpFind.exe /p:c:\users\bob /e:*lolcats.ext* /c:0 /m:10 /w
+SharpFind.exe /p:c:\users\bob /e:*lolcats.ext* /c:0 /m:10 /w /n
 ```
-This will look for all files in `c:\users\bob` where the file name contains `lolcats.ext`. It will set CPU priority to `0`, thus nearly everything except for other processes set to zero will get priority over `SharpFind.exe`. It will only return files that have been modified in the last ten minutes and that are writable by the user running `SharpFind.exe`
+This will look for all files in `c:\users\bob` where the file name contains `lolcats.ext`. It will set CPU priority to `0`, thus nearly everything except for other processes set to zero will get priority over `SharpFind.exe`. It will only return files that have been modified in the last ten minutes and that are writable by the user running `SharpFind.exe` and that are valid .NET assemblies.
 ## Credits
 M. Cory Billington [@_th3y](https://twitter.com/_th3y)
 
