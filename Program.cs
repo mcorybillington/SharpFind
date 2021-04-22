@@ -200,13 +200,13 @@ namespace SharpFind
                         {
                             printFile = HasBeenModified(file, modifiedTime);
                         }
-                        if (checkWrite && printFile)
-                        {
-                            printFile = IsWritable(file);
-                        }
                         if (isDotNet && printFile)
                         {
                             printFile = IsDotNet(file);
+                        }
+                        if (checkWrite && printFile)
+                        {
+                            printFile = IsWritable(file);
                         }
                         if (printFile)
                         {
